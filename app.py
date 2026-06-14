@@ -1,3 +1,5 @@
+
+
 import streamlit as st
 from groq import Groq
 import pandas as pd
@@ -12,9 +14,6 @@ st.markdown("""
     h1, h2, h3 { color: #D4AF37!important; }
 .stChatInput > div > div > input { background-color: #1E1E1E; color: #D4AF37; border: 1px solid #D4AF37; }
 .stButton > button { background-color: #D4AF37; color: #0E1117; font-weight: bold; border: none; }
-.stButton > button:hover { background-color: #F0C75E; color: #0E1117; }
-.st-emotion-cache-1c7y2kd { background-color: #1E1E1E; border-left: 3px solid #D4AF37; }
-.stDataFrame { border: 1px solid #D4AF37; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -128,3 +127,5 @@ if prompt := http://st.chat_input("Your command, Sir?"):
                 st.markdown(reply)[1][0]
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
+
+
