@@ -1,19 +1,22 @@
-
-
 import streamlit as st
 from groq import Groq
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
+import re
 
 st.set_page_config(page_title="Kyle - Sir's AI", page_icon="🤵", layout="centered")
 
+# Custom CSS for styling
 st.markdown("""
     <style>
-.stApp { background-color: #0E1117; }
+    .stApp { background-color: #0E1117; }
     h1, h2, h3 { color: #D4AF37!important; }
-.stChatInput > div > div > input { background-color: #1E1E1E; color: #D4AF37; border: 1px solid #D4AF37; }
-.stButton > button { background-color: #D4AF37; color: #0E1117; font-weight: bold; border: none; }
+    .stChatInput > div > div > input { background-color: #1E1E1E; color: #D4AF37; border: 1px solid #D4AF37; }
+    .stButton > button { background-color: #D4AF37; color: #0E1117; font-weight: bold; border: none; }
+    .stButton > button:hover { background-color: #F0C75E; color: #0E1117; }
+    .st-emotion-cache-1c7y2kd { background-color: #1E1E1E; border-left: 3px solid #D4AF37; }
+    .stDataFrame { border: 1px solid #D4AF37; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -24,6 +27,7 @@ def check_password():
             del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
+            
     if "password_correct" not in st.session_state:
         st.text_input("Password for Sir:", type="password", on_change=password_entered, key="password")
         st.stop()
@@ -34,7 +38,8 @@ def check_password():
     return True
 
 if check_password():
-    st.success("Welcome back, Sir. Kyle awaits. 🔓")
+    st.title("🤵 Kyle")
+    st.caption("Sir's personal butler, analyst, and executor")
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
@@ -44,9 +49,6 @@ if "df" not in st.session_state:
     st.session_state.df = None
 if "df_name" not in st.session_state:
     st.session_state.df_name = None
-
-st.title("🤵 Kyle")
-st.caption("Sir's personal butler, analyst, and executor")
 
 uploaded_file = st.file_uploader("Upload business data for analysis, Sir", type=["csv", "xlsx"])
 if uploaded_file is not None:
@@ -85,47 +87,57 @@ def get_chart_instructions():
     ax.set_title('Data Preview', color='#D4AF37')
     ax.tick_params(colors='#D4AF37')
     plt.tight_layout()
-
-    If not asking for a chart, respond normally.
+    ```
+    If not asking for a chart, respond normally. Use formatting and text instead.
     """
 
-if prompt := http://st.chat_input("Your command, Sir?"):
-    http://st.session_state.messages.append({"role": "user", "content": prompt})
-    with http://st.chat_message("user"):
-        http://st.markdown(prompt)
+if prompt := st.chat_input("Your command, Sir?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-    with http://st.chat_message("assistant"):
-        with http://st.spinner("Kyle is executing your request, Sir..."):
+    with st.chat_message("assistant"):
+        with st.spinner("Kyle is executing your request, Sir..."):
             df_context = ""
-            if http://st.session_state.df is not None:
+            if st.session_state.df is not None:
                 df_context = f"\n\nSir has this data in memory: {st.session_state.df_name}\nColumns: {', '.join(st.session_state.df.columns)}\nFirst 5 rows:\n{st.session_state.df.head().to_string()}"
 
             system_prompt = f"You are Kyle, Sir's personal AI butler. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You are an expert data analyst. Be concise but brilliant. Never break character.{df_context}\n\n{get_chart_instructions()}"
 
-            full_response = http://client.chat.completions.create(
+            # Constructing proper API message history payload
+            api_messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
+
+            full_response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
-                messages=[{"role": "system", "content": system_prompt}, _st.session_state.messages],
+                messages=api_messages,
                 temperature=0.7,
                 max_tokens=1500,
             )
-            reply = full_response.choices.message.content[0]
+            # Correct structural placement for text content
+            reply = full_response.choices[0].message.content
 
             if "```python" in reply and st.session_state.df is not None:
                 try:
-                    code = reply.split("```python").split("```")
-                    exec(code, {"df": st.session_state.df, "plt": plt, "pd": pd})
-                    buf = io.BytesIO()
-                    plt.savefig(buf, format="png", facecolor='#0E1117')
-                    buf.seek(0)
-                    st.image(buf)
-                    plt.close()
-                    st.markdown("_Chart generated for you, Sir.*")
+                    # Isolate pure executable python code using RegExp
+                    code_match = re.search(r"```python(.*?)```", reply, re.DOTALL)
+                    if code_match:
+                        code = code_match.group(1).strip()
+                        # Pass clean execution context environment
+                        local_vars = {"df": st.session_state.df, "plt": plt, "pd": pd}
+                        exec(code, {}, local_vars)
+                        
+                        buf = io.BytesIO()
+                        plt.savefig(buf, format="png", facecolor='#0E1117')
+                        buf.seek(0)
+                        st.image(buf)
+                        plt.close()
+                        st.markdown("_Chart generated for you, Sir._")
+                    else:
+                        st.markdown(reply)
                 except Exception as e:
                     st.error(f"Kyle's charting failed, Sir: {e}")
                     st.markdown(reply)
             else:
-                st.markdown(reply)[1][0]
+                st.markdown(reply)
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
-
-
