@@ -3,7 +3,6 @@ from groq import Groq
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
-import base64
 
 # --- PAGE CONFIG + LUXURY THEME ---
 st.set_page_config(
@@ -15,17 +14,17 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-  .stApp { background-color: #0E1117; }
+ .stApp { background-color: #0E1117; }
     h1, h2, h3 { color: #D4AF37!important; }
-  .stChatInput > div > div > input {
+ .stChatInput > div > div > input {
         background-color: #1E1E1E; color: #D4AF37; border: 1px solid #D4AF37;
     }
-  .stButton > button {
+ .stButton > button {
         background-color: #D4AF37; color: #0E1117; font-weight: bold; border: none;
     }
-  .stButton > button:hover { background-color: #F0C75E; color: #0E1117; }
-  .st-emotion-cache-1c7y2kd { background-color: #1E1E1E; border-left: 3px solid #D4AF37; }
-  .stDataFrame { border: 1px solid #D4AF37; }
+ .stButton > button:hover { background-color: #F0C75E; color: #0E1117; }
+ .st-emotion-cache-1c7y2kd { background-color: #1E1E1E; border-left: 3px solid #D4AF37; }
+ .stDataFrame { border: 1px solid #D4AF37; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -92,8 +91,8 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # --- UPGRADE 2: CHART FUNCTION ---
-def create_chart_prompt(df):
-    return f"""
+def create_chart_prompt():
+    return """
     You can generate charts for Sir. When Sir asks for a plot, chart, or graph, you must respond ONLY with Python code inside ```python ``` blocks.
     Use matplotlib. The dataframe is named 'df' and is already loaded.
     Always use this style for luxury: plt.style.use('dark_background'), set figure facecolor='#0E1117', use gold '#D4AF37' for bars/lines.
