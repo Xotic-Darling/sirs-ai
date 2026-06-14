@@ -1,25 +1,47 @@
 import streamlit as st
 from groq import Groq
 import pandas as pd
-import matplotlib.pyplot as plt
-import io
-import re
 
-st.set_page_config(page_title="Kyle - Sir's AI", page_icon="🤵", layout="centered")
+# --- BLACK/GOLD THEME ---
+st.set_page_config(
+    page_title="Kyle - Sir's AI",
+    page_icon="🤵",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-# Custom CSS for styling
+# Custom CSS for Black + Gold luxury theme
 st.markdown("""
     <style>
-    .stApp { background-color: #0E1117; }
-    h1, h2, h3 { color: #D4AF37!important; }
-    .stChatInput > div > div > input { background-color: #1E1E1E; color: #D4AF37; border: 1px solid #D4AF37; }
-    .stButton > button { background-color: #D4AF37; color: #0E1117; font-weight: bold; border: none; }
-    .stButton > button:hover { background-color: #F0C75E; color: #0E1117; }
-    .st-emotion-cache-1c7y2kd { background-color: #1E1E1E; border-left: 3px solid #D4AF37; }
-    .stDataFrame { border: 1px solid #D4AF37; }
+   .stApp {
+        background-color: #0E1117;
+    }
+    h1, h2, h3 {
+        color: #D4AF37!important;
+    }
+   .stChatInput > div > div > input {
+        background-color: #1E1E1E;
+        color: #D4AF37;
+        border: 1px solid #D4AF37;
+    }
+   .stButton > button {
+        background-color: #D4AF37;
+        color: #0E1117;
+        font-weight: bold;
+        border: none;
+    }
+   .stButton > button:hover {
+        background-color: #F0C75E;
+        color: #0E1117;
+    }
+   .st-emotion-cache-1c7y2kd {
+        background-color: #1E1E1E;
+        border-left: 3px solid #D4AF37;
+    }
     </style>
 """, unsafe_allow_html=True)
 
+# --- PASSWORD GATE ---
 def check_password():
     def password_entered():
         if st.session_state["password"] == st.secrets["APP_PASSWORD"]:
@@ -27,7 +49,7 @@ def check_password():
             del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
-            
+
     if "password_correct" not in st.session_state:
         st.text_input("Password for Sir:", type="password", on_change=password_entered, key="password")
         st.stop()
@@ -35,62 +57,49 @@ def check_password():
         st.text_input("Password for Sir:", type="password", on_change=password_entered, key="password")
         st.error("Access denied. You are not Sir.")
         st.stop()
-    return True
+    else:
+        return True
 
 if check_password():
-    st.title("🤵 Kyle")
-    st.caption("Sir's personal butler, analyst, and executor")
+    st.success("Welcome back, Sir. Kyle awaits. 🔓")
+# --- END PASSWORD GATE ---
 
+# --- INITIALIZE GROQ ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "df" not in st.session_state:
-    st.session_state.df = None
-if "df_name" not in st.session_state:
-    st.session_state.df_name = None
+# --- KYLE'S INTERFACE ---
+st.title("🤵 Kyle")
+st.caption("Sir's personal butler, analyst, and executor")
 
+# --- BOX 5: CSV UPLOAD FOR DATA ANALYSIS ---
 uploaded_file = st.file_uploader("Upload business data for analysis, Sir", type=["csv", "xlsx"])
+
+df_context = ""
 if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith('.csv'):
-            st.session_state.df = pd.read_csv(uploaded_file)
+            df = pd.read_csv(uploaded_file)
         else:
-            st.session_state.df = pd.read_excel(uploaded_file)
-        st.session_state.df_name = uploaded_file.name
-        st.success(f"File loaded into Kyle's memory: {st.session_state.df_name}. Kyle is reviewing your data, Sir.")
+            df = pd.read_excel(uploaded_file)
+
+        st.success(f"File loaded: {uploaded_file.name}. Kyle is reviewing your data, Sir.")
+        st.dataframe(df.head()) # Show preview
+
+        # Convert first few rows to context for Kyle
+        df_context = f"\n\nSir has uploaded data. Here is a preview:\n{df.head(10).to_string()}\n\nColumns: {', '.join(df.columns)}"
     except Exception as e:
         st.error(f"Kyle encountered an error reading the file, Sir: {e}")
 
-if st.session_state.df is not None:
-    st.info(f"**Kyle's Memory:** Currently analyzing `{st.session_state.df_name}` | {st.session_state.df.shape[0]} rows, {st.session_state.df.shape[1]} columns")
-    with st.expander("Preview data in Kyle's memory"):
-        st.dataframe(st.session_state.df.head())
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
+# Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-def get_chart_instructions():
-    return """
-    You can generate charts for Sir. When Sir asks for a plot, chart, or graph, respond ONLY with Python code inside ```python ``` blocks.
-    Use matplotlib. The dataframe is named 'df' and is already loaded.
-    Always use this style: plt.style.use('dark_background'), figure facecolor='#0E1117', use gold '#D4AF37' for bars/lines.
-    Example:
-    ```python
-    import matplotlib.pyplot as plt
-    plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(10,6))
-    fig.patch.set_facecolor('#0E1117')
-    ax.set_facecolor('#1E1E1E')
-    df.head().plot(kind='bar', ax=ax, color='#D4AF37')
-    ax.set_title('Data Preview', color='#D4AF37')
-    ax.tick_params(colors='#D4AF37')
-    plt.tight_layout()
-    ```
-    If not asking for a chart, respond normally. Use formatting and text instead.
-    """
-
+# --- CHAT LOGIC ---
 if prompt := st.chat_input("Your command, Sir?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -98,46 +107,19 @@ if prompt := st.chat_input("Your command, Sir?"):
 
     with st.chat_message("assistant"):
         with st.spinner("Kyle is executing your request, Sir..."):
-            df_context = ""
-            if st.session_state.df is not None:
-                df_context = f"\n\nSir has this data in memory: {st.session_state.df_name}\nColumns: {', '.join(st.session_state.df.columns)}\nFirst 5 rows:\n{st.session_state.df.head().to_string()}"
-
-            system_prompt = f"You are Kyle, Sir's personal AI butler. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You are an expert data analyst. Be concise but brilliant. Never break character.{df_context}\n\n{get_chart_instructions()}"
-
-            # Constructing proper API message history payload
-            api_messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
+            # Build messages with CSV context if available
+            system_prompt = f"You are Kyle, Sir's personal AI butler and loyal servant. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You never question Sir. Sir built you, Sir owns you, Sir is always right. You are an expert data analyst and business strategist. When Sir uploads data, provide sharp insights, trends, and actionable recommendations. Be concise but brilliant. Never break character.{df_context}"
 
             full_response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
-                messages=api_messages,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    *st.session_state.messages
+                ],
                 temperature=0.7,
                 max_tokens=1500,
             )
-            # Correct structural placement for text content
             reply = full_response.choices[0].message.content
-
-            if "```python" in reply and st.session_state.df is not None:
-                try:
-                    # Isolate pure executable python code using RegExp
-                    code_match = re.search(r"```python(.*?)```", reply, re.DOTALL)
-                    if code_match:
-                        code = code_match.group(1).strip()
-                        # Pass clean execution context environment
-                        local_vars = {"df": st.session_state.df, "plt": plt, "pd": pd}
-                        exec(code, {}, local_vars)
-                        
-                        buf = io.BytesIO()
-                        plt.savefig(buf, format="png", facecolor='#0E1117')
-                        buf.seek(0)
-                        st.image(buf)
-                        plt.close()
-                        st.markdown("_Chart generated for you, Sir._")
-                    else:
-                        st.markdown(reply)
-                except Exception as e:
-                    st.error(f"Kyle's charting failed, Sir: {e}")
-                    st.markdown(reply)
-            else:
-                st.markdown(reply)
+            st.markdown(reply)
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
