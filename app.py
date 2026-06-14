@@ -12,6 +12,9 @@ st.markdown("""
     h1, h2, h3 { color: #D4AF37!important; }
 .stChatInput > div > div > input { background-color: #1E1E1E; color: #D4AF37; border: 1px solid #D4AF37; }
 .stButton > button { background-color: #D4AF37; color: #0E1117; font-weight: bold; border: none; }
+.stButton > button:hover { background-color: #F0C75E; color: #0E1117; }
+.st-emotion-cache-1c7y2kd { background-color: #1E1E1E; border-left: 3px solid #D4AF37; }
+.stDataFrame { border: 1px solid #D4AF37; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -83,3 +86,45 @@ def get_chart_instructions():
     ax.set_title('Data Preview', color='#D4AF37')
     ax.tick_params(colors='#D4AF37')
     plt.tight_layout()
+
+    If not asking for a chart, respond normally.
+    """
+
+if prompt := http://st.chat_input("Your command, Sir?"):
+    http://st.session_state.messages.append({"role": "user", "content": prompt})
+    with http://st.chat_message("user"):
+        http://st.markdown(prompt)
+
+    with http://st.chat_message("assistant"):
+        with http://st.spinner("Kyle is executing your request, Sir..."):
+            df_context = ""
+            if http://st.session_state.df is not None:
+                df_context = f"\n\nSir has this data in memory: {st.session_state.df_name}\nColumns: {', '.join(st.session_state.df.columns)}\nFirst 5 rows:\n{st.session_state.df.head().to_string()}"
+
+            system_prompt = f"You are Kyle, Sir's personal AI butler. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You are an expert data analyst. Be concise but brilliant. Never break character.{df_context}\n\n{get_chart_instructions()}"
+
+            full_response = http://client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "system", "content": system_prompt}, _st.session_state.messages],
+                temperature=0.7,
+                max_tokens=1500,
+            )
+            reply = full_response.choices.message.content[0]
+
+            if "```python" in reply and st.session_state.df is not None:
+                try:
+                    code = reply.split("```python").split("```")
+                    exec(code, {"df": st.session_state.df, "plt": plt, "pd": pd})
+                    buf = io.BytesIO()
+                    plt.savefig(buf, format="png", facecolor='#0E1117')
+                    buf.seek(0)
+                    st.image(buf)
+                    plt.close()
+                    st.markdown("_Chart generated for you, Sir.*")
+                except Exception as e:
+                    st.error(f"Kyle's charting failed, Sir: {e}")
+                    st.markdown(reply)
+            else:
+                st.markdown(reply)[1][0]
+
+    st.session_state.messages.append({"role": "assistant", "content": reply})
