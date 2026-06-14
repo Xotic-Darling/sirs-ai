@@ -4,28 +4,28 @@ import matplotlib.pyplot as plt
 import io
 import re
 
-# 1. Page Configuration
+# 1. Initialize Streamlit Page Layout Configuration
 st.set_page_config(page_title="Kyle - Sir's AI", page_icon="🤵", layout="centered")
 
-# 2. Check for missing secrets gracefully so the app does not hard-crash
+# 2. Defensive check for missing environment keys to block application crashes
 if "GROQ_API_KEY" not in st.secrets or "APP_PASSWORD" not in st.secrets:
-    st.error("⚠️ Configuration Error: Missing Secrets")
+    st.error("⚠️ App Setup Incomplete: Missing Secrets Profile Configurations")
     st.markdown("""
-    Please ensure you have configured your secrets.
+    Please ensure you have configured your runtime tokens.
     
-    **Locally:** Create a `.streamlit/secrets.toml` file in your project folder with:
+    **On Windows (Local):** Add a `.streamlit/secrets.toml` file inside your workspace directory:
     ```toml
     GROQ_API_KEY = "your_actual_groq_key"
     APP_PASSWORD = "your_chosen_password"
     ```
-    **On Streamlit Cloud:** Add these keys into your app's **Advanced Settings > Secrets** dashboard.
+    **On Streamlit Cloud:** Add these keys under **Advanced Settings > Secrets** via your application control panel.
     """)
     st.stop()
 
-# Import Groq only after confirming secrets exist to prevent initialization crashes
+# Safe initialization of the API SDK client
 from groq import Groq
 
-# 3. Custom CSS for Styling
+# 3. Custom UI Styling Rules
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; }
@@ -38,7 +38,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 4. Authentication Logic
+# 4. State-Driven Password Guard
 def check_password():
     def password_entered():
         if st.session_state["password"] == st.secrets["APP_PASSWORD"]:
@@ -56,15 +56,14 @@ def check_password():
         st.stop()
     return True
 
-# Run app if password checks out
+# Application flow execution trigger
 if check_password():
     st.title("🤵 Kyle")
     st.caption("Sir's personal butler, analyst, and executor")
 
-    # 5. Initialize API Client
+    # Initialize Engine Contexts
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-    # 6. Initialize Session States
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "df" not in st.session_state:
@@ -72,7 +71,7 @@ if check_password():
     if "df_name" not in st.session_state:
         st.session_state.df_name = None
 
-    # 7. File Uploader Interface
+    # 5. File System Import Control
     uploaded_file = st.file_uploader("Upload business data for analysis, Sir", type=["csv", "xlsx"])
     if uploaded_file is not None:
         try:
@@ -85,18 +84,17 @@ if check_password():
         except Exception as e:
             st.error(f"Kyle encountered an error reading the file, Sir: {e}")
 
-    # Display Data Preview if Available
+    # Active Workspace Summary Header
     if st.session_state.df is not None:
         st.info(f"**Kyle's Memory:** Currently analyzing `{st.session_state.df_name}` | {st.session_state.df.shape[0]} rows, {st.session_state.df.shape[1]} columns")
         with st.expander("Preview data in Kyle's memory"):
             st.dataframe(st.session_state.df.head())
 
-    # 8. Render Chat History
+    # 6. Historic Chat Canvas Generation Loop
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # System Instructions Prompt Builder
     def get_chart_instructions():
         return """
         You can generate charts for Sir. When Sir asks for a plot, chart, or graph, respond ONLY with Python code inside ```python ``` blocks.
@@ -114,10 +112,10 @@ if check_password():
         ax.tick_params(colors='#D4AF37')
         plt.tight_layout()
         ```
-        If not asking for a chart, respond normally using text and markdown formatting. Always address the user as 'Sir'.
+        If not asking for a chart, respond normally using professional text, formatting, and markdown layout tables. Always address the user as 'Sir'.
         """
 
-    # 9. Chat Input Handling
+    # 7. Conversational Pipeline Input Processing
     if prompt := st.chat_input("Your command, Sir?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -125,41 +123,39 @@ if check_password():
 
         with st.chat_message("assistant"):
             with st.spinner("Kyle is executing your request, Sir..."):
-                # Inject DataFrame Context if data is loaded
                 df_context = ""
                 if st.session_state.df is not None:
                     df_context = f"\n\nSir has this data in memory: {st.session_state.df_name}\nColumns: {', '.join(st.session_state.df.columns)}\nFirst 5 rows:\n{st.session_state.df.head().to_string()}"
 
                 system_prompt = f"You are Kyle, Sir's personal AI butler. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You are an expert data analyst. Be concise but brilliant. Never break character.{df_context}\n\n{get_chart_instructions()}"
 
-                # Safely construct system + chat history messages payload
+                # Formatting conversation sequences correctly
                 api_messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
 
                 try:
                     full_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
+                        model="llama-3.3-70b-versatile",
                         messages=api_messages,
-                        temperature=0.7,
+                        temperature=0.4,
                         max_tokens=1500,
                     )
                     reply = full_response.choices.message.content
                 except Exception as api_err:
-                    st.error(f"Kyle had trouble reaching the intelligence core, Sir: {api_err}")
-                    reply = "Forgive me, Sir. I encountered an error connecting to my processing core."
+                    st.error(f"Core communication failure, Sir: {api_err}")
+                    reply = "Forgive me, Sir. I encountered an obstruction communicating with my central brain matrix."
 
-                # 10. Parse Python Code or Normal Response Text
+                # 8. Evaluation Layer (Text Response vs Executable Plot Parsing)
                 if "```python" in reply and st.session_state.df is not None:
                     try:
-                        # Extract the clean string between python blocks
                         code_match = re.search(r"```python(.*?)```", reply, re.DOTALL)
                         if code_match:
                             code = code_match.group(1).strip()
                             
-                            # Safely set up standard global/local namespace
+                            # Sandboxed operational local execution environment 
                             local_vars = {"df": st.session_state.df, "plt": plt, "pd": pd}
                             exec(code, {}, local_vars)
                             
-                            # Render the plot into Streamlit's interface
+                            # Standard image memory processing stream
                             buf = io.BytesIO()
                             plt.savefig(buf, format="png", facecolor='#0E1117')
                             buf.seek(0)
@@ -169,10 +165,9 @@ if check_password():
                         else:
                             st.markdown(reply)
                     except Exception as e:
-                        st.error(f"Kyle's charting execution failed, Sir: {e}")
+                        st.error(f"Kyle's automatic data graphing protocol failed, Sir: {e}")
                         st.markdown(reply)
                 else:
                     st.markdown(reply)
 
-        # Append assistant response to chat memory loop
         st.session_state.messages.append({"role": "assistant", "content": reply})
