@@ -12,8 +12,28 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 st.set_page_config(page_title="Sir's AI", page_icon="🔥")
+#---PASSWORD GATE---
+def check_password():
+    def password_entered():
+        if st.session_state["password"]== st.secrets["APP_PASSWORD"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"] #Don't store password
+        else:
+            st.session_state["password_correct"] = False
+    if "password_correct" not in st.session_state:
+        st.text_input("password", type="password", on_change=password_entered,key="password")
+        st.stop()
+    elif not st.session_state["password_correct"]:
+        st.text_input("passsword", type="password", on_change=password_entered,key="password")
+        st.error("wrong password, sir,")
+        st.stop()
+    else:
+        return True
+if check_password():
+    st.success("Access granted, Sir.")
+# ---END PAAWORD GATE ---
 st.title("🔥 Sir's Personal AI")
-st.caption("Running on 4GB RAM. Built by Sir. What can YOUR laptop do?")
+st.caption("Built by Sir. What can YOUR laptop do?")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
