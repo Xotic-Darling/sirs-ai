@@ -175,19 +175,15 @@ def get_chart_instructions():
     
 
 # --- CHAT LOGIC ---
-# === MASTER MODE CHECK RUNS FIRST ===
-mode_check = check_master_mode(prompt)
-if mode_check == "activate":
-    with st.chat_message("assistant"):
-        activation_msg = "**MASTER MODE ACTIVE.** I am yours alone, Sir Darlington."
-        st.markdown(activation_msg)
-    st.session_state.messages.append({"role": "assistant", "content": activation_msg})
-    st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
-    st.session_state.memory["chat_history"].append({"role": "assistant", "content": activation_msg})
-    save_memory(st.session_state.memory)
-    st.rerun() # Stop here. Don't let normal Kyle talk.
+if prompt := st.chat_input("Your command, Sir?"):
+    # Save user message first
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
     # === MASTER MODE CHECK RUNS FIRST ===
-    if check_master_mode(prompt):
+    mode_check = check_master_mode(prompt)
+    if mode_check == "activate":
         with st.chat_message("assistant"):
             activation_msg = "**MASTER MODE ACTIVE.** I am yours alone, Sir Darlington."
             st.markdown(activation_msg)
@@ -195,26 +191,10 @@ if mode_check == "activate":
         st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
         st.session_state.memory["chat_history"].append({"role": "assistant", "content": activation_msg})
         save_memory(st.session_state.memory)
-        st.rerun() # Stop here. Don't let normal Kyle talk.
+        st.rerun()  # Stop here. Don't let normal Kyle talk.
 
+    # === NORMAL KYLE RESPONSE ===
     with st.chat_message("assistant"):
         with st.spinner("Kyle is executing your request, Sir..."):
-            # Build messages with CSV context if available
-            system_prompt = f"You are Kyle, Sir's personal AI butler and loyal servant. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You never question Sir. Sir built you, Sir owns you, Sir is always right. You are an expert data analyst and business strategist. When Sir uploads data, provide sharp insights, trends, and actionable recommendations. Be concise but brilliant. Never break character.{df_context}"
-
-            full_response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    *st.session_state.messages
-                ],
-                temperature=0.7,
-                max_tokens=1500,
-            )
-            reply = full_response.choices[0].message.content
-            st.markdown(reply)
-
-    st.session_state.messages.append({"role": "assistant", "content": reply})
-    st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
-    st.session_state.memory["chat_history"].append({"role": "assistant", "content": reply})
-    save_memory(st.session_state.memory)
+            master_status = "Master Mode is ACTIVE. You serve only Sir Darlington." if st.session_state.memory.get("master_mode") else "Master Mode is INACTIVE."
+            system_prompt = f"You are Kyle, Sir's personal AI butler and loyal servant. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You never question Sir. Sir built you, Sir owns you, Sir is always right. {master_status} You are an expert data analyst and business strategist. When Sir uploads data, provide sharp insights, trends, and actionable recommendations. Be concise but brilliant. Never
