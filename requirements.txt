@@ -2,4 +2,6 @@ streamlit
 groq
 pandas
 matplotlib
-openpyxl
+pdfplumber
+pytesseract
+Pillow
