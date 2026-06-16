@@ -5,4 +5,3 @@ matplotlib
 pdfplumber
 pytesseract
 pillow
-tesseract-ocr
