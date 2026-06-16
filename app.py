@@ -173,22 +173,22 @@ if uploaded_file is not None:
             st.success(f"PDF loaded: {uploaded_file.name}. Kyle extracted the text, Sir.")
             st.text_area("Extracted Text Preview", pdf_text[:1000], height=200)
             df_context = f"\n\nSir has uploaded a PDF document. Extracted content:\n{pdf_text[:3000]}"
-         elif file_type in ['png', 'jpg', 'jpeg']:
-    image = Image.open(uploaded_file)
-    st.image(image, caption=f"Uploaded: {uploaded_file.name}", width=300)
-    try:
-        with st.spinner("Kyle is reading the image, Sir..."):
-            pdf_text = pytesseract.image_to_string(image)
-        st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
-    except Exception as e:
-        st.error(f"Kyle couldn't read this image, Sir. Error: {e}")
-        pdf_text = "OCR FAILED - Tesseract may not be installed on server."
-            st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
-            st.text_area("OCR Text Preview", pdf_text[:1000], height=200)
-            df_context = f"\n\nSir has uploaded an image. OCR extracted text:\n{pdf_text[:3000]}"
+            elif file_type in ['png', 'jpg', 'jpeg']:
+                image = Image.open(uploaded_file)
+                st.image(image, caption=f"Uploaded: {uploaded_file.name}", width=300)
+                try:
+                    with st.spinner("Kyle is reading the image, Sir..."):
+                    pdf_text = pytesseract.image_to_string(image)
+                    st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
+               except Exception as e:
+                    st.error(f"Kyle couldn't read this image, Sir. Error: {e}")
+                    pdf_text = "OCR FAILED - Tesseract may not be installed on server."
+                    st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
+                    st.text_area("OCR Text Preview", pdf_text[:1000], height=200)
+                    df_context = f"\n\nSir has uploaded an image. OCR extracted text:\n{pdf_text[:3000]}"
             
-    except Exception as e:
-        st.error(f"Kyle encountered an error reading the file, Sir: {e}")
+              except Exception as e:
+                    st.error(f"Kyle encountered an error reading the file, Sir: {e}")
 
 # Initialize chat history
 # Initialize chat history
