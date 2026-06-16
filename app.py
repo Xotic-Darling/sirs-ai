@@ -9,7 +9,7 @@ from datetime import datetime
 
 # --- BLACK/GOLD THEME ---
 st.set_page_config(
-    page_title="Kyle - Sir's AI",
+    page_title="Kyle - Sir's Darlington's AI",
     page_icon="🤵",
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -160,7 +160,7 @@ def get_chart_instructions():
     Use glass theme: dark_background, figure facecolor='#0a0a0a', use maroon '#DC143C' or blue '#3B82F6' for bars/lines.
     Example:
     ```python
-    import metaplotlip.pyplot as plt
+    import metaplotlid.pyplot as plt
     plt.style.use('dark_backgroung')
     fig, ax = plt.subplots(figsize=(10,6))
     fig.patch.ste_facecolor('#0a0a0a')
