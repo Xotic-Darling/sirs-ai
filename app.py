@@ -178,6 +178,17 @@ if prompt := st.chat_input("Your command, Sir?"):
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # === MASTER MODE CHECK RUNS FIRST ===
+    if check_master_mode(prompt):
+        with st.chat_message("assistant"):
+            activation_msg = "**MASTER MODE ACTIVE.** I am yours alone, Sir Darlington."
+            st.markdown(activation_msg)
+        st.session_state.messages.append({"role": "assistant", "content": activation_msg})
+        st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
+        st.session_state.memory["chat_history"].append({"role": "assistant", "content": activation_msg})
+        save_memory(st.session_state.memory)
+        st.rerun() # Stop here. Don't let normal Kyle talk.
+
     with st.chat_message("assistant"):
         with st.spinner("Kyle is executing your request, Sir..."):
             # Build messages with CSV context if available
@@ -196,3 +207,6 @@ if prompt := st.chat_input("Your command, Sir?"):
             st.markdown(reply)
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
+    st.session_state.memory["chat_history"].append({"role": "assistant", "content": reply})
+    save_memory(st.session_state.memory)
