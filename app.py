@@ -115,11 +115,13 @@ if "df_name" not in st.session_state:
 # === MASTER MODE CHECK ===
 # === MASTER MODE CHECK ===
 def check_master_mode(prompt):
-    if "[i'm darlington kibet 2.0]" in prompt.lower():  # Your phrase, lowercase check
-        st.session_state.memory["master_mode"] = True
-        save_memory(st.session_state.memory)
-        return True
-    return st.session_state.memory.get("master_mode", False)
+    # Only return True if this exact prompt is the activation phrase
+    if "[i'm darlington kibet 2.0]" in prompt.lower():
+        if not st.session_state.memory.get("master_mode", False):  # Only if not already active
+            st.session_state.memory["master_mode"] = True
+            save_memory(st.session_state.memory)
+            return "activate"  # Special signal to activate
+    return None
 # --- KYLE'S INTERFACE ---
 st.title("🤵 Kyle")
 st.caption(f"{st.session_state.memory['sir_name']}'s personal butler, analyst, and executor")
@@ -173,11 +175,17 @@ def get_chart_instructions():
     
 
 # --- CHAT LOGIC ---
-if prompt := st.chat_input("Your command, Sir?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
+# === MASTER MODE CHECK RUNS FIRST ===
+mode_check = check_master_mode(prompt)
+if mode_check == "activate":
+    with st.chat_message("assistant"):
+        activation_msg = "**MASTER MODE ACTIVE.** I am yours alone, Sir Darlington."
+        st.markdown(activation_msg)
+    st.session_state.messages.append({"role": "assistant", "content": activation_msg})
+    st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
+    st.session_state.memory["chat_history"].append({"role": "assistant", "content": activation_msg})
+    save_memory(st.session_state.memory)
+    st.rerun() # Stop here. Don't let normal Kyle talk.
     # === MASTER MODE CHECK RUNS FIRST ===
     if check_master_mode(prompt):
         with st.chat_message("assistant"):
