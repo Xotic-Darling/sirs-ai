@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 import io
 import json
 import os
-from datetime import datetime 
+from datetime import datetime
+import pdfplumber
+from PIL import Image
+import pytesseract
 
 # --- BLACK/GOLD THEME ---
 st.set_page_config(
@@ -126,26 +129,61 @@ def check_master_mode(prompt):
 st.title("🤵 Kyle")
 st.caption(f"{st.session_state.memory['sir_name']}'s personal butler, analyst, and executor")
 
-# --- BOX 5: CSV UPLOAD FOR DATA ANALYSIS ---
-uploaded_file = st.file_uploader(f"Upload business data for analysis, {st.session_state.memory['sir_name']}", type=["csv", "xlsx"])
-
+# --- BOX 5: FILE UPLOAD FOR DATA ANALYSIS ---
+uploaded_file = st.file_uploader(
+    f"Upload business data for analysis, {st.session_state.memory['sir_name']}", 
+    type=["csv", "xlsx", "pdf", "png", "jpg", "jpeg"]
+)
 
 df_context = ""
+pdf_text = ""
+
 if uploaded_file is not None:
     try:
-        if uploaded_file.name.endswith('.csv'):
+        file_type = uploaded_file.name.split('.')[-1].lower()
+        
+        if file_type == 'csv':
             df = pd.read_csv(uploaded_file)
-        else:
+            st.session_state.df = df
+            st.success(f"CSV loaded: {uploaded_file.name}. Kyle is reviewing your data, Sir.")
+            st.dataframe(df.head())
+            df_context = f"\n\nSir has uploaded CSV data. Preview:\n{df.head(10).to_string()}\nColumns: {', '.join(df.columns)}"
+            
+        elif file_type == 'xlsx':
             df = pd.read_excel(uploaded_file)
-
-        st.success(f"File loaded: {uploaded_file.name}. Kyle is reviewing your data, Sir.")
-        st.dataframe(df.head()) # Show preview
-
-        # Convert first few rows to context for Kyle
-        df_context = f"\n\nSir has uploaded data. Here is a preview:\n{df.head(10).to_string()}\n\nColumns: {', '.join(df.columns)}"
+            st.session_state.df = df
+            st.success(f"Excel loaded: {uploaded_file.name}. Kyle is reviewing your data, Sir.")
+            st.dataframe(df.head())
+            df_context = f"\n\nSir has uploaded Excel data. Preview:\n{df.head(10).to_string()}\nColumns: {', '.join(df.columns)}"
+            
+        elif file_type == 'pdf':
+            with pdfplumber.open(uploaded_file) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        pdf_text += page_text + "\n"
+            
+            if not pdf_text.strip():
+                st.warning("This looks like a scanned PDF, Sir. Install Tesseract for OCR.")
+                pdf_text = "SCANNED PDF - No text layer detected."
+                
+            st.success(f"PDF loaded: {uploaded_file.name}. Kyle extracted the text, Sir.")
+            st.text_area("Extracted Text Preview", pdf_text[:1000], height=200)
+            df_context = f"\n\nSir has uploaded a PDF document. Extracted content:\n{pdf_text[:3000]}"
+            
+        elif file_type in ['png', 'jpg', 'jpeg']:
+            image = Image.open(uploaded_file)
+            st.image(image, caption=f"Uploaded: {uploaded_file.name}", width=300)
+            with st.spinner("Kyle is reading the image, Sir..."):
+                pdf_text = pytesseract.image_to_string(image)
+            st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
+            st.text_area("OCR Text Preview", pdf_text[:1000], height=200)
+            df_context = f"\n\nSir has uploaded an image. OCR extracted text:\n{pdf_text[:3000]}"
+            
     except Exception as e:
         st.error(f"Kyle encountered an error reading the file, Sir: {e}")
 
+# Initialize chat history
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
