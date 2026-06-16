@@ -113,13 +113,13 @@ if "df_name" not in st.session_state:
     st.session_state.df_name = None
 
 # === MASTER MODE CHECK ===
+# === MASTER MODE CHECK ===
 def check_master_mode(prompt):
-    if "[i'm Darlington Kibet 2.0]" in prompt:
-        st.session__state.memory["master_code"] = True
+    if "[i'm darlington kibet 2.0]" in prompt.lower():  # Your phrase, lowercase check
+        st.session_state.memory["master_mode"] = True
         save_memory(st.session_state.memory)
         return True
-    return st.session_state.memory["master_mode"]
-
+    return st.session_state.memory.get("master_mode", False)
 # --- KYLE'S INTERFACE ---
 st.title("🤵 Kyle")
 st.caption(f"{st.session_state.memory['sir_name']}'s personal butler, analyst, and executor")
