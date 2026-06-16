@@ -1,5 +1,5 @@
 streamlit
 groq
 pandas
-metplotlib
+matplotlib
 openpyxl
