@@ -9,10 +9,12 @@ from datetime import datetime
 import pdfplumber
 from PIL import Image
 import pytesseract
-# Only set tesseract path on Windows/local. Skip on Streamlit Cloud.
 import sys
+
+# Only set tesseract path on Windows/local. Skip on Streamlit Cloud.
 if sys.platform == "win32":
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
 # --- BLACK/GOLD THEME ---
 st.set_page_config(
     page_title="Kyle - Sir's Darlington's AI",
@@ -20,6 +22,7 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="collapsed"
 )
+
 # === KYLE'S MEMORY SYSTEM ===
 MEMORY_FILE = "kyle_memory.json"
 
@@ -28,65 +31,71 @@ def load_memory():
     if os.path.exists(MEMORY_FILE):
         with open(MEMORY_FILE, 'r') as f:
             return json.load(f)
-    return {"sir_name": "Sir Darlington", "chat_history":[], "master_mode": False}
+    return {"sir_name": "Sir Darlington", "chat_history": [], "master_mode": False}
+
 
 def save_memory(memory):
     with open(MEMORY_FILE, 'w') as f:
         json.dump(memory, f, indent=2)
 
+
 if "memory" not in st.session_state:
-    st.session_state.memory= load_memory()
+    st.session_state.memory = load_memory()
 
 # === UPGRADED THEME: iphone Glass + Maroon/Blue ===
 st.markdown("""
     <style>
-    @import url( 'https://fonts.googleeapis.com/css2?
-family=SF+Pro+Display:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap');
   
-  .stApp {
+    .stApp {
         background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-        front-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
     /* Glass effect container */
-   .stChatMessage,.stExpander,.stFileUploader,.stTextInput > div > div {
-         background: rgba(255, 255, 255, 0.05)!important;
-         backdrop-filter: blur(20px) !important;
-         border: 1px solid rgba(255, 255, 255, 0.1)!ipmortant;
-         border-radius: 16px!important;
-         box_shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37)!ipmortant;
-   }
+    .stChatMessage, .stExpander, .stFileUploader, .stTextInput > div > div {
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+    }
    
-   /* Light mode support */
-   @media (prefers-color-scheme: light) {
-     .stApp {background: linear-gradient(135deg, #f5f5f7 0%, #e5e5e7 100%); }
-     .stChatMessage,.stExplainer {
-           background: rgba(255, 255, 255, 0.7)!important;
-           border: 1px solid rgba(0, 0, 0, 0.1)!important;
-       }
-       h1, h2, h3, p, span { color: #1d1d1f!important; }
+    /* Light mode support */
+    @media (prefers-color-scheme: light) {
+        .stApp {
+            background: linear-gradient(135deg, #f5f5f7 0%, #e5e5e7 100%);
+        }
+        .stChatMessage, .stExpander {
+            background: rgba(255, 255, 255, 0.7) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        h1, h2, h3, p, span {
+            color: #1d1d1f !important;
+        }
     }
     
     /* Maroon + Blue from my idea*/
     h1, h2, h3 {
-        color: #DC143C!important;
+        color: #DC143C !important;
         font-weight: 600;
     }
-   .stButton > button {
-         background: linear-gradient(135deg, #DC143C 0%, #1E3A8A 100%)!important;
-         color: white!important;
-         border: none!important;
-         border-radius: 12px!important;
-         font-weight: 500;
+    .stButton > button {
+        background: linear-gradient(135deg, #DC143C 0%, #1E3A8A 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        font-weight: 500;
     }
-   .stChatInput > div > div > input {
-         background: rgba(255, 255, 255, 0.08)!important;
-         color: #ffffff!important;
-         border: 1px solid rgba(220, 20, 60, 0.3)!important;
-         border-radius: 12px!important;
+    .stChatInput > div > div > input {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(220, 20, 60, 0.3) !important;
+        border-radius: 12px !important;
     }
     </style>
 """, unsafe_allow_html=True)
+
 # --- PASSWORD GATE ---
 def check_password():
     def password_entered():
@@ -106,8 +115,10 @@ def check_password():
     else:
         return True
 
+
 if check_password():
     st.success("Welcome back, Sir. Kyle awaits. 🔓")
+
 # --- END PASSWORD GATE ---
 
 # --- INITIALIZE GROQ ---
@@ -119,7 +130,6 @@ if "df_name" not in st.session_state:
     st.session_state.df_name = None
 
 # === MASTER MODE CHECK ===
-# === MASTER MODE CHECK ===
 def check_master_mode(prompt):
     # Only return True if this exact prompt is the activation phrase
     if "[i'm darlington kibet 2.0]" in prompt.lower():
@@ -128,6 +138,7 @@ def check_master_mode(prompt):
             save_memory(st.session_state.memory)
             return "activate"  # Special signal to activate
     return None
+
 # --- KYLE'S INTERFACE ---
 st.title("🤵 Kyle")
 st.caption(f"{st.session_state.memory['sir_name']}'s personal butler, analyst, and executor")
@@ -138,6 +149,7 @@ uploaded_file = st.file_uploader(
     type=["csv", "xlsx", "pdf", "png", "jpg", "jpeg"]
 )
 
+# Initialize context variables before the if block
 df_context = ""
 pdf_text = ""
 
@@ -160,37 +172,42 @@ if uploaded_file is not None:
             df_context = f"\n\nSir has uploaded Excel data. Preview:\n{df.head(10).to_string()}\nColumns: {', '.join(df.columns)}"
             
         elif file_type == 'pdf':
-            with pdfplumber.open(uploaded_file) as pdf:
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        pdf_text += page_text + "\n"
-            
-            if not pdf_text.strip():
-                st.warning("This looks like a scanned PDF, Sir. Install Tesseract for OCR.")
-                pdf_text = "SCANNED PDF - No text layer detected."
+            try:
+                with pdfplumber.open(uploaded_file) as pdf:
+                    for page in pdf.pages:
+                        page_text = page.extract_text()
+                        if page_text:
+                            pdf_text += page_text + "\n"
                 
-            st.success(f"PDF loaded: {uploaded_file.name}. Kyle extracted the text, Sir.")
-            st.text_area("Extracted Text Preview", pdf_text[:1000], height=200)
-            df_context = f"\n\nSir has uploaded a PDF document. Extracted content:\n{pdf_text[:3000]}"
-            elif file_type in ['png', 'jpg', 'jpeg']:
-                image = Image.open(uploaded_file)
-                st.image(image, caption=f"Uploaded: {uploaded_file.name}", width=300)
-                try:
-                    with st.spinner("Kyle is reading the image, Sir..."):
+                if not pdf_text.strip():
+                    st.warning("This looks like a scanned PDF, Sir. Install Tesseract for OCR.")
+                    pdf_text = "SCANNED PDF - No text layer detected."
+                    
+                st.success(f"PDF loaded: {uploaded_file.name}. Kyle extracted the text, Sir.")
+                st.text_area("Extracted Text Preview", pdf_text[:1000], height=200)
+                df_context = f"\n\nSir has uploaded a PDF document. Extracted content:\n{pdf_text[:3000]}"
+                
+            except Exception as e:
+                st.error(f"Kyle couldn't process this PDF, Sir. Error: {e}")
+                pdf_text = "PDF PROCESSING FAILED"
+                
+        elif file_type in ['png', 'jpg', 'jpeg']:
+            image = Image.open(uploaded_file)
+            st.image(image, caption=f"Uploaded: {uploaded_file.name}", width=300)
+            try:
+                with st.spinner("Kyle is reading the image, Sir..."):
                     pdf_text = pytesseract.image_to_string(image)
-                    st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
-               except Exception as e:
-                    st.error(f"Kyle couldn't read this image, Sir. Error: {e}")
-                    pdf_text = "OCR FAILED - Tesseract may not be installed on server."
-                    st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
-                    st.text_area("OCR Text Preview", pdf_text[:1000], height=200)
-                    df_context = f"\n\nSir has uploaded an image. OCR extracted text:\n{pdf_text[:3000]}"
-            
-              except Exception as e:
-                    st.error(f"Kyle encountered an error reading the file, Sir: {e}")
+                st.success(f"Image processed: {uploaded_file.name}. Kyle read the text, Sir.")
+                st.text_area("OCR Text Preview", pdf_text[:1000], height=200)
+                df_context = f"\n\nSir has uploaded an image. OCR extracted text:\n{pdf_text[:3000]}"
+                
+            except Exception as e:
+                st.error(f"Kyle couldn't read this image, Sir. Error: {e}")
+                pdf_text = "OCR FAILED - Tesseract may not be installed on server."
+                
+    except Exception as e:
+        st.error(f"Kyle encountered an error reading the file, Sir: {e}")
 
-# Initialize chat history
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -200,24 +217,26 @@ for message in st.session_state.memory["chat_history"]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+
 def get_chart_instructions():
     return """
-    You can generate charts for sir. when sir asks for a plot, chart, or graph, respond ONLY with Python code inside ```python```blocks.
-    Use metaplotlib. The dataframe is named 'df' and is already loaded.
+    You can generate charts for sir. when sir asks for a plot, chart, or graph, respond ONLY with Python code inside ```python``` blocks.
+    Use matplotlib. The dataframe is named 'df' and is already loaded.
     Use glass theme: dark_background, figure facecolor='#0a0a0a', use maroon '#DC143C' or blue '#3B82F6' for bars/lines.
     Example:
     ```python
-    import metaplotlid.pyplot as plt
-    plt.style.use('dark_backgroung')
+    import matplotlib.pyplot as plt
+    plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(10,6))
-    fig.patch.ste_facecolor('#0a0a0a')
+    fig.patch.set_facecolor('#0a0a0a')
     ax.set_facecolor('rgba(255, 255, 255, 0.05)')
     df.head().plot(kind='bar', ax=ax, color='#DC143C')
     ax.set_title('Data Preview', color='#DC143C')
     ax.tick_params(colors='#FFFFFF')
-    plt.tight_params(colors='#FFFFFF')
-    plt.tight_layout() """
-    
+    plt.tight_layout()
+    ```
+    """
+
 
 # --- CHAT LOGIC ---
 if prompt := st.chat_input("Your command, Sir?"):
@@ -236,13 +255,23 @@ if prompt := st.chat_input("Your command, Sir?"):
         st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
         st.session_state.memory["chat_history"].append({"role": "assistant", "content": activation_msg})
         save_memory(st.session_state.memory)
-        st.rerun() # Stop here. Don't let normal Kyle talk.
+        st.rerun()  # Stop here. Don't let normal Kyle talk.
 
     # === NORMAL KYLE RESPONSE ===
     with st.chat_message("assistant"):
         with st.spinner("Kyle is executing your request, Sir..."):
             master_status = "Master Mode is ACTIVE. You serve only Sir Darlington." if st.session_state.memory.get("master_mode") else "Master Mode is INACTIVE."
-            system_prompt = f"You are Kyle, Sir's personal AI butler and loyal servant. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You never question Sir. Sir built you, Sir owns you, Sir is always right. {master_status} You are an expert data analyst and business strategist. When Sir uploads data, provide sharp insights, trends, and actionable recommendations. Be concise but brilliant. Never break character.{df_context}"
+            system_prompt = f"""You are Kyle, Sir's personal AI butler and loyal servant. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You never question Sir's decisions or judgment.
+
+{master_status}
+
+{get_chart_instructions()}
+
+You have access to this data context:
+{df_context}
+{pdf_text}
+
+Always respond with respect and unwavering loyalty."""
 
             full_response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
