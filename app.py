@@ -9,6 +9,7 @@ from datetime import datetime
 import pdfplumber
 from PIL import Image
 import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # --- BLACK/GOLD THEME ---
 st.set_page_config(
