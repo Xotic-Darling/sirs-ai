@@ -4,5 +4,5 @@ pandas
 matplotlib
 pdfplumber
 pytesseract
-Pillow
+pillow
 tesseract-ocr
