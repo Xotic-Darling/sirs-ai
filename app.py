@@ -122,10 +122,10 @@ def check_master_mode(prompt):
 
 # --- KYLE'S INTERFACE ---
 st.title("🤵 Kyle")
-st.caption("f.{st.session_state.memomry['sir's_name']}'s personal butler, analyst, and executor")
+st.caption(f"{st.session_state.memomry['sir's_name']}'s personal butler, analyst, and executor")
 
 # --- BOX 5: CSV UPLOAD FOR DATA ANALYSIS ---
-uploaded_file = st.file_uploader("Upload business data for analysis, {st.session_state.memory['sir_name']}", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader(f"Upload business data for analysis, {st.session_state.memory['sir_name']}", type=["csv", "xlsx"])
 
 
 df_context = ""
