@@ -154,7 +154,7 @@ for message in st.session_state.memory["chat_history"]:
         st.markdown(message["content"])
 
 def get_chart_instructions():
-    return ""
+    return """
     You can generate charts for sir. when sir asks for a plot, chart, or graph, respond ONLY with Python code inside ```python```blocks.
     Use metaplotlib. The dataframe is named 'df' and is already loaded.
     Use glass theme: dark_background, figure facecolor='#0a0a0a', use maroon '#DC143C' or blue '#3B82F6' for bars/lines.
@@ -169,7 +169,7 @@ def get_chart_instructions():
     ax.set_title('Data Preview', color='#DC143C')
     ax.tick_params(colors='#FFFFFF')
     plt.tight_params(colors='#FFFFFF')
-    plt.tight_layout()
+    plt.tight_layout() """
     
 
 # --- CHAT LOGIC ---
