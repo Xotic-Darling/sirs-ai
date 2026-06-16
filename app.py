@@ -1,7 +1,7 @@
 import streamlit as st
 from groq import Groq
 import pandas as pd
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt  
 import io
 import json
 import os
