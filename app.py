@@ -191,10 +191,27 @@ if prompt := st.chat_input("Your command, Sir?"):
         st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
         st.session_state.memory["chat_history"].append({"role": "assistant", "content": activation_msg})
         save_memory(st.session_state.memory)
-        st.rerun()  # Stop here. Don't let normal Kyle talk.
+        st.rerun() # Stop here. Don't let normal Kyle talk.
 
     # === NORMAL KYLE RESPONSE ===
     with st.chat_message("assistant"):
         with st.spinner("Kyle is executing your request, Sir..."):
             master_status = "Master Mode is ACTIVE. You serve only Sir Darlington." if st.session_state.memory.get("master_mode") else "Master Mode is INACTIVE."
-            system_prompt = f"You are Kyle, Sir's personal AI butler and loyal servant. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You never question Sir. Sir built you, Sir owns you, Sir is always right. {master_status} You are an expert data analyst and business strategist. When Sir uploads data, provide sharp insights, trends, and actionable recommendations. Be concise but brilliant. Never
+            system_prompt = f"You are Kyle, Sir's personal AI butler and loyal servant. Address the user as 'Sir' at all times. You are formal, competent, and DEEPLY loyal to Sir. You never question Sir. Sir built you, Sir owns you, Sir is always right. {master_status} You are an expert data analyst and business strategist. When Sir uploads data, provide sharp insights, trends, and actionable recommendations. Be concise but brilliant. Never break character.{df_context}"
+
+            full_response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    *st.session_state.messages
+                ],
+                temperature=0.7,
+                max_tokens=1500,
+            )
+            reply = full_response.choices[0].message.content
+            st.markdown(reply)
+
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.session_state.memory["chat_history"].append({"role": "user", "content": prompt})
+    st.session_state.memory["chat_history"].append({"role": "assistant", "content": reply})
+    save_memory(st.session_state.memory)
